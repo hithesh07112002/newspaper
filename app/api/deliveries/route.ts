@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Invalid delivery data" }, { status: 400 });
   }
 
-  const deliveryBoy = await (db.user as any).findUnique({ where: { username: parsed.data.deliveryBoyUsername } });
+  const deliveryBoy = await db.user.findUnique({ where: { username: parsed.data.deliveryBoyUsername } });
   if (!deliveryBoy || deliveryBoy.role !== "DELIVERY_BOY") {
     return NextResponse.json({ message: "Delivery boy not found" }, { status: 404 });
   }

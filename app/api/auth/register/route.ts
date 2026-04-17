@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   }
 
   const email = parsed.data.email.trim().toLowerCase();
-  const existingUser = await (db.user as any).findUnique({ where: { email } });
+  const existingUser = await db.user.findUnique({ where: { email } });
   if (existingUser) {
     return NextResponse.json({ message: "Email already registered" }, { status: 409 });
   }
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       ? "PENDING"
       : "APPROVED";
 
-  const created = await (db.user as any).create({
+  const created = await db.user.create({
     data: {
       email,
       username: email,

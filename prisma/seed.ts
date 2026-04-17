@@ -46,7 +46,7 @@ async function main() {
       role: "AGENT",
       approvalStatus: "APPROVED",
     },
-  } as any);
+  });
 
   const deliveryBoy = await prisma.user.upsert({
     where: { username: "boy1" },
@@ -63,7 +63,7 @@ async function main() {
       role: "DELIVERY_BOY",
       approvalStatus: "APPROVED",
     },
-  } as any);
+  });
 
   await prisma.user.upsert({
     where: { username: "admin" },
@@ -80,7 +80,7 @@ async function main() {
       role: "ADMIN",
       approvalStatus: "APPROVED",
     },
-  } as any);
+  });
 
   await prisma.user.upsert({
     where: { username: "user1@example.com" },
@@ -97,7 +97,7 @@ async function main() {
       role: "USER",
       approvalStatus: "APPROVED",
     },
-  } as any);
+  });
 
   const customerA = await prisma.customer.upsert({
     where: { id: "seed-c1" },

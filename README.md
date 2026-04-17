@@ -97,3 +97,18 @@ Open http://localhost:3000
 - Use managed PostgreSQL and secure secret management
 - Keep JWT_SECRET long and unique per environment
 - Add rate limiting and external monitoring for full production hardening
+
+## Deploy to Vercel
+
+1. Push this repository to GitHub.
+2. In Vercel, import the GitHub repository.
+3. In Project Settings -> Environment Variables, add:
+	- DATABASE_URL
+	- JWT_SECRET
+	- GEMINI_API_KEY (optional)
+4. In Project Settings -> Build & Development Settings:
+	- Build Command: npm run vercel-build
+5. Deploy.
+
+After first deploy, your database schema is pushed during build by the `vercel-build` script.
+If you want demo data in production, run `npm run db:seed` once against the production DATABASE_URL from a trusted machine.

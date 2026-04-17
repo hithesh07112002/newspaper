@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: auth.message }, { status: auth.status });
   }
 
-  const deliveryBoys = await (db.user as any).findMany({
+  const deliveryBoys = await db.user.findMany({
     where: {
       role: "DELIVERY_BOY",
     },
@@ -49,7 +49,7 @@ export async function PATCH(request: NextRequest) {
       ? "APPROVED"
       : "REJECTED";
 
-  await (db.user as any).update({
+  await db.user.update({
     where: { id: parsed.data.userId },
     data: { approvalStatus: nextStatus },
   });
