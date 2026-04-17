@@ -49,7 +49,11 @@ export async function POST(request: NextRequest) {
     return response;
   }
 
-  const user = await (db.user as any).findUnique({ where: { email: normalizedIdentifier } });
+  const user = await db.user.findFirst({
+    where: {
+      OR: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }],
+    },
+  });
 
   if (!user) {
     return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });

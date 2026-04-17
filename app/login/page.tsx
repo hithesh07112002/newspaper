@@ -134,6 +134,7 @@ export default function LoginPage() {
 
         <div className="mt-6 rounded bg-slate-50 p-3 text-xs text-slate-600">
           <p>Fixed Agent Login: AGENT001 / AGENT@123</p>
+          <p>User login: email or username + password</p>
           <p>Delivery boys must be approved by agent before login.</p>
         </div>
       </div>
