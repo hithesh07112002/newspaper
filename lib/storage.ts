@@ -41,13 +41,23 @@ export function setLedgerData(data: LedgerData) {
 }
 
 export function login(username: string, password: string): User | null {
+  const normalizedUser = username.trim();
+  const normalizedPassword = password.trim();
+
+  const isKnownCredential =
+    (normalizedUser === "agent1" && normalizedPassword === "agent123") ||
+    (normalizedUser === "boy1" && normalizedPassword === "boy123") ||
+    (normalizedUser === "admin" && normalizedPassword === "admin123");
+
+  if (!isKnownCredential) {
+    return null;
+  }
+
   const data = getLedgerData();
-  const user = data.users.find(
-    (item) => item.username === username.trim() && item.password === password.trim(),
-  );
+  const user = data.users.find((item) => item.username === normalizedUser) ?? null;
 
   if (!user || !canUseStorage()) {
-    return user ?? null;
+    return user;
   }
 
   window.localStorage.setItem(SESSION_KEY, JSON.stringify(user));

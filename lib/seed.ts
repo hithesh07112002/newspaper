@@ -6,8 +6,9 @@ const monthYear = `${today.getFullYear()}-${String(today.getMonth() + 1).padStar
 export const seededData: LedgerData = {
   unitCost: 5,
   users: [
-    { id: "u1", username: "agent1", password: "agent123", role: "AGENT" },
-    { id: "u2", username: "boy1", password: "boy123", role: "DELIVERY_BOY" },
+    { id: "u1", username: "agent1", role: "AGENT" },
+    { id: "u2", username: "boy1", role: "DELIVERY_BOY" },
+    { id: "u3", username: "admin", role: "ADMIN" },
   ],
   customers: [
     { id: "c1", name: "Ravi Kumar", area: "North Street", status: "ACTIVE" },

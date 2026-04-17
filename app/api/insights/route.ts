@@ -76,7 +76,7 @@ Rules:
 
   try {
     const sdk = await import("@google/genai");
-    const ai = new sdk.GoogleGenAI({ apiKey }) as any;
+    const ai = new sdk.GoogleGenAI({ apiKey });
 
     const result = (await ai.models.generateContent({
       model: "gemini-2.0-flash",

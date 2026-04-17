@@ -1,21 +1,28 @@
-export type UserRole = "AGENT" | "DELIVERY_BOY";
+export type UserRole = "USER" | "AGENT" | "DELIVERY_BOY" | "ADMIN";
+
+export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export type PaymentMode = "CASH" | "ONLINE";
 
 export type DeliveryStatus = "PENDING" | "DELIVERED";
 
+export type CustomerStatus = "ACTIVE" | "STOPPED";
+
+export type CollectionStatus = "PAID" | "PENDING";
+
 export interface User {
   id: string;
   username: string;
-  password: string;
+  email?: string;
   role: UserRole;
+  approvalStatus?: ApprovalStatus;
 }
 
 export interface Customer {
   id: string;
   name: string;
   area: string;
-  status: "ACTIVE" | "STOPPED";
+  status: CustomerStatus;
 }
 
 export interface Delivery {
@@ -36,7 +43,7 @@ export interface Collection {
   paymentDate: string;
   dueDate?: string;
   mode: PaymentMode;
-  status: "PAID" | "PENDING";
+  status: CollectionStatus;
 }
 
 export interface Salary {

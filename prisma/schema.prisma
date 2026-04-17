@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum UserRole {
+  USER
+  AGENT
+  DELIVERY_BOY
+  ADMIN
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CustomerStatus {
+  ACTIVE
+  STOPPED
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERED
+}
+
+enum PaymentMode {
+  CASH
+  ONLINE
+}
+
+enum CollectionStatus {
+  PAID
+  PENDING
+}
+
+model User {
+  id           String     @id @default(cuid())
+  username     String     @unique
+  email        String?    @unique
+  passwordHash String
+  role         UserRole
+  approvalStatus ApprovalStatus @default(APPROVED)
+  deliveries   Delivery[]
+  salaries     Salary[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Customer {
+  id          String       @id @default(cuid())
+  name        String
+  area        String
+  status      CustomerStatus @default(ACTIVE)
+  deliveries  Delivery[]
+  collections Collection[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Delivery {
+  id            String         @id @default(cuid())
+  customerId    String
+  customer      Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  date          DateTime
+  ordered       Int
+  delivered     Int
+  deliveryBoyId String
+  deliveryBoy   User           @relation(fields: [deliveryBoyId], references: [id], onDelete: Restrict)
+  status        DeliveryStatus @default(PENDING)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([deliveryBoyId, date])
+}
+
+model Collection {
+  id          String           @id @default(cuid())
+  customerId  String
+  customer    Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  monthYear   String
+  amount      Float
+  paymentDate DateTime?
+  dueDate     DateTime?
+  mode        PaymentMode
+  status      CollectionStatus
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([monthYear, status])
+}
+
+model Salary {
+  id            String   @id @default(cuid())
+  deliveryBoyId String
+  deliveryBoy   User     @relation(fields: [deliveryBoyId], references: [id], onDelete: Restrict)
+  monthYear     String
+  amount        Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([monthYear, deliveryBoyId])
+}
+
+model AppSetting {
+  id        String   @id
+  unitCost  Float    @default(5)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
