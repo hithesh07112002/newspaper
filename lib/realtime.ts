@@ -1,4 +1,5 @@
 type RealtimeEventType =
+  | "user.created"
   | "customer.created"
   | "customer.updated"
   | "collection.created"

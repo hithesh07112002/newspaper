@@ -1,8 +1,15 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireRole } from "@/lib/auth";
 import { subscribeEvents } from "@/lib/realtime";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const auth = await requireRole(request);
+  if (!auth.ok) {
+    return NextResponse.json({ message: auth.message }, { status: auth.status });
+  }
+
   const encoder = new TextEncoder();
   let cleanup = () => undefined;
 

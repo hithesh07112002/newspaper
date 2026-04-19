@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireRole } from "@/lib/auth";
+import { insightInputSchema } from "@/lib/validators";
 
 type InsightInput = {
   monthKey: string;
@@ -48,7 +50,22 @@ function buildRuleBasedInsight(payload: InsightInput) {
 }
 
 export async function POST(request: NextRequest) {
-  const payload = (await request.json()) as InsightInput;
+  const auth = await requireRole(request, ["AGENT", "ADMIN"]);
+  if (!auth.ok) {
+    return NextResponse.json({ message: auth.message }, { status: auth.status });
+  }
+
+  const body = await request.json().catch(() => null);
+  if (!body) {
+    return NextResponse.json({ message: "Invalid insights payload" }, { status: 400 });
+  }
+
+  const parsed = insightInputSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ message: "Invalid insights payload" }, { status: 400 });
+  }
+
+  const payload: InsightInput = parsed.data;
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {

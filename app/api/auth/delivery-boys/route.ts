@@ -3,6 +3,8 @@ import { requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { reviewDeliveryBoySchema } from "@/lib/validators";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const auth = await requireRole(request, ["AGENT"]);
   if (!auth.ok) {
@@ -23,7 +25,14 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  return NextResponse.json({ deliveryBoys });
+  return NextResponse.json(
+    { deliveryBoys },
+    {
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    },
+  );
 }
 
 export async function PATCH(request: NextRequest) {

@@ -23,6 +23,8 @@ export interface Customer {
   name: string;
   area: string;
   status: CustomerStatus;
+  assignedUserId?: string;
+  assignedUsername?: string;
 }
 
 export interface Delivery {

@@ -6,6 +6,7 @@ type DashboardResponse = {
   data: LedgerData;
   metrics: MonthlyMetrics;
   pendingCount: number;
+  viewer: User;
 };
 
 type LoginResponse = {
@@ -17,7 +18,7 @@ type RegisterResponse = {
   user: {
     id: string;
     email: string;
-    role: "USER" | "DELIVERY_BOY";
+    role: "USER" | "AGENT" | "DELIVERY_BOY";
     approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
   };
 };
@@ -31,8 +32,43 @@ type InsightResponse = {
   source: "gemini" | "rule-based";
 };
 
+const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
+
+function withLeadingSlash(path: string) {
+  return path.startsWith("/") ? path : `/${path}`;
+}
+
+function shouldIgnoreConfiguredBaseUrl(configuredUrl: string) {
+  if (!configuredUrl || typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    const configuredHost = new URL(configuredUrl).hostname;
+    const runningHost = window.location.hostname;
+    const configuredIsLocal = configuredHost === "localhost" || configuredHost === "127.0.0.1";
+    const runningIsLocal = runningHost === "localhost" || runningHost === "127.0.0.1";
+    return configuredIsLocal && !runningIsLocal;
+  } catch {
+    return false;
+  }
+}
+
+export function buildApiUrl(path: string) {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  const normalizedPath = withLeadingSlash(path);
+  if (apiBaseUrl && !shouldIgnoreConfiguredBaseUrl(apiBaseUrl)) {
+    return `${apiBaseUrl}${normalizedPath}`;
+  }
+
+  return normalizedPath;
+}
+
 async function requestJson<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetch(buildApiUrl(url), {
     ...options,
     credentials: "include",
     cache: "no-store",
@@ -60,7 +96,7 @@ export async function loginApi(username: string, password: string) {
 export async function registerApi(input: {
   email: string;
   password: string;
-  role: "USER" | "DELIVERY_BOY";
+  role: "USER" | "AGENT" | "DELIVERY_BOY";
 }) {
   return requestJson<RegisterResponse>("/api/auth/register", {
     method: "POST",
@@ -82,10 +118,10 @@ export async function dashboardApi(month: string) {
   return requestJson<DashboardResponse>(`/api/dashboard?month=${encodeURIComponent(month)}`);
 }
 
-export async function addCustomerApi(name: string, area: string) {
+export async function addCustomerApi(name: string, area: string, assignedUserId?: string | null) {
   return requestJson<{ id: string }>("/api/customers", {
     method: "POST",
-    body: JSON.stringify({ name, area }),
+    body: JSON.stringify({ name, area, assignedUserId }),
   });
 }
 
@@ -94,6 +130,27 @@ export async function updateCustomerStatusApi(customerId: string, status: "ACTIV
     method: "PATCH",
     body: JSON.stringify({ customerId, status }),
   });
+}
+
+export async function updateCustomerAssignmentApi(
+  customerId: string,
+  assignedUserId: string | null,
+) {
+  return requestJson<{ ok: boolean }>("/api/customers", {
+    method: "PATCH",
+    body: JSON.stringify({ customerId, assignedUserId }),
+  });
+}
+
+export async function listAssignableUsersApi() {
+  return requestJson<{
+    users: Array<{
+      id: string;
+      username: string;
+      email: string | null;
+      assignedCustomerCount: number;
+    }>;
+  }>("/api/users");
 }
 
 export async function recordCollectionApi(input: {

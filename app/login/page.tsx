@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [registerMode, setRegisterMode] = useState(false);
-  const [registerRole, setRegisterRole] = useState<"USER" | "DELIVERY_BOY">("USER");
+  const [registerRole, setRegisterRole] = useState<"USER" | "AGENT" | "DELIVERY_BOY">("USER");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -74,13 +74,13 @@ export default function LoginPage() {
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">
-              {registerMode ? "Email" : "Email or Agent ID"}
+              {registerMode ? "Email" : "Email or Username"}
             </label>
             <input
               value={identifier}
               onChange={(event) => setIdentifier(event.target.value)}
               className="w-full rounded border border-slate-300 px-3 py-2 outline-none ring-blue-500 focus:ring"
-              placeholder={registerMode ? "you@example.com" : "you@example.com or AGENT001"}
+              placeholder={registerMode ? "you@example.com" : "you@example.com or your username"}
             />
           </div>
           <div>
@@ -90,8 +90,13 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="w-full rounded border border-slate-300 px-3 py-2 outline-none ring-blue-500 focus:ring"
-              placeholder={registerMode ? "Minimum 6 characters" : "Enter password"}
+              placeholder={registerMode ? "At least 10 chars with letters and numbers" : "Enter password"}
             />
+            {registerMode ? (
+              <p className="mt-1 text-xs text-slate-500">
+                Password must be at least 10 characters and include at least one letter and one number.
+              </p>
+            ) : null}
           </div>
 
           {registerMode ? (
@@ -99,10 +104,11 @@ export default function LoginPage() {
               <label className="mb-1 block text-sm font-medium text-slate-700">Register as</label>
               <select
                 value={registerRole}
-                onChange={(event) => setRegisterRole(event.target.value as "USER" | "DELIVERY_BOY")}
+                onChange={(event) => setRegisterRole(event.target.value as "USER" | "AGENT" | "DELIVERY_BOY")}
                 className="w-full rounded border border-slate-300 px-3 py-2 outline-none ring-blue-500 focus:ring"
               >
                 <option value="USER">User</option>
+                <option value="AGENT">Agent</option>
                 <option value="DELIVERY_BOY">Delivery Boy</option>
               </select>
             </div>
@@ -133,9 +139,8 @@ export default function LoginPage() {
         </button>
 
         <div className="mt-6 rounded bg-slate-50 p-3 text-xs text-slate-600">
-          <p>Fixed Agent Login: AGENT001 / AGENT@123</p>
-          <p>User login: email or username + password</p>
-          <p>Delivery boys must be approved by agent before login.</p>
+          <p>Use your assigned email or username with your password.</p>
+          <p>Delivery boy accounts must be approved by an agent before login.</p>
         </div>
       </div>
     </main>

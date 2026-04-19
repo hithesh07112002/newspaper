@@ -1,0 +1,226 @@
+[
+    {
+        "endpoint":  "/api/auth/me",
+        "method":  "GET",
+        "case":  "unauthenticated me",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "admin valid login",
+        "status":  200,
+        "response":  "{\"user\":{\"id\":\"cmo5mookp0002fs4o52mp8wk1\",\"username\":\"admin\",\"email\":\"admin@example.com\",\"role\":\"ADMIN\",\"approvalStatus\":\"APPROVED\"}}"
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "agent valid login",
+        "status":  200,
+        "response":  "{\"user\":{\"id\":\"cmo5mona80000fs4oghauxlur\",\"username\":\"agent1\",\"email\":\"agent1@example.com\",\"role\":\"AGENT\",\"approvalStatus\":\"APPROVED\"}}"
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "login invalid password",
+        "status":  401,
+        "response":  "{\"message\":\"Invalid credentials\"}"
+    },
+    {
+        "endpoint":  "/api/auth/register",
+        "method":  "POST",
+        "case":  "register invalid short password",
+        "status":  400,
+        "response":  "{\"message\":\"Password must be at least 10 characters and include at least one letter and one number.\",\"errors\":{\"password\":[\"Password must be at least 10 characters and include at least one letter and one number.\"]}}"
+    },
+    {
+        "endpoint":  "/api/auth/register",
+        "method":  "POST",
+        "case":  "register valid new user",
+        "status":  201,
+        "response":  "{\"message\":\"Registration successful. You can now log in.\",\"user\":{\"id\":\"cmo5numzq000ifskg6ez3tmjz\",\"email\":\"apitest-valid-1776596776@example.com\",\"role\":\"USER\",\"approvalStatus\":\"APPROVED\"}}"
+    },
+    {
+        "endpoint":  "/api/auth/me",
+        "method":  "GET",
+        "case":  "admin me after login",
+        "status":  200,
+        "response":  "{\"user\":{\"userId\":\"cmo5mookp0002fs4o52mp8wk1\",\"username\":\"admin\",\"role\":\"ADMIN\",\"email\":\"admin@example.com\",\"approvalStatus\":\"APPROVED\"}}"
+    },
+    {
+        "endpoint":  "/api/auth/me",
+        "method":  "GET",
+        "case":  "agent me after login",
+        "status":  200,
+        "response":  "{\"user\":{\"userId\":\"cmo5mona80000fs4oghauxlur\",\"username\":\"agent1\",\"role\":\"AGENT\",\"email\":\"agent1@example.com\",\"approvalStatus\":\"APPROVED\"}}"
+    },
+    {
+        "endpoint":  "/api/auth/delivery-boys",
+        "method":  "GET",
+        "case":  "delivery-boys unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/auth/delivery-boys",
+        "method":  "GET",
+        "case":  "delivery-boys with admin (forbidden expected)",
+        "status":  403,
+        "response":  "{\"message\":\"Forbidden\"}"
+    },
+    {
+        "endpoint":  "/api/auth/delivery-boys",
+        "method":  "GET",
+        "case":  "delivery-boys with agent",
+        "status":  200,
+        "response":  "{\"deliveryBoys\":[{\"id\":\"cmo5n2whc000ffskgzy2jix3m\",\"email\":\"agent001@gmail.com\",\"username\":\"agent001@gmail.com\",\"approvalStatus\":\"PENDING\",\"createdAt\":\"2026-04-19T10:44:43.632Z\"},{\"id\":\"cmo5monx70001fs4o528yqe6v\",\"email\":\"boy1@example.com\",\"username\":\"boy1\",\"a"
+    },
+    {
+        "endpoint":  "/api/auth/delivery-boys",
+        "method":  "PATCH",
+        "case":  "delivery-boys patch invalid user id",
+        "status":  404,
+        "response":  "{\"message\":\"Delivery boy not found\"}"
+    },
+    {
+        "endpoint":  "/api/dashboard?month=bad-month",
+        "method":  "GET",
+        "case":  "dashboard invalid month format (admin)",
+        "status":  400,
+        "response":  "{\"message\":\"Invalid month format. Use YYYY-MM.\"}"
+    },
+    {
+        "endpoint":  "/api/dashboard?month=2026-04",
+        "method":  "GET",
+        "case":  "dashboard unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/dashboard?month=2026-04",
+        "method":  "GET",
+        "case":  "dashboard with admin",
+        "status":  200,
+        "response":  "{\"monthYear\":\"2026-04\",\"data\":{\"users\":[{\"id\":\"cmo5mona80000fs4oghauxlur\",\"username\":\"agent1\",\"email\":\"agent1@example.com\",\"role\":\"AGENT\",\"approvalStatus\":\"APPROVED\"},{\"id\":\"cmo5monx70001fs4o528yqe6v\",\"username\":\"boy1\",\"email\":\"boy1@example.com\",\"role\":\"DELIVE"
+    },
+    {
+        "endpoint":  "/api/customers",
+        "method":  "POST",
+        "case":  "customers create unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/customers",
+        "method":  "POST",
+        "case":  "customers create with admin",
+        "status":  200,
+        "response":  "{\"id\":\"cmo5nuxzw000jfskgglfjbvle\"}"
+    },
+    {
+        "endpoint":  "/api/customers",
+        "method":  "PATCH",
+        "case":  "customers patch with admin",
+        "status":  200,
+        "response":  "{\"ok\":true}"
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "POST",
+        "case":  "collections create unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "POST",
+        "case":  "collections create with admin",
+        "status":  200,
+        "response":  "{\"id\":\"cmo5nv0w3000lfskgbpv35qtn\"}"
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "PATCH",
+        "case":  "collections patch mark paid with admin",
+        "status":  200,
+        "response":  "{\"ok\":true}"
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "POST",
+        "case":  "deliveries create unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "POST",
+        "case":  "deliveries create with admin",
+        "status":  200,
+        "response":  "{\"id\":\"cmo5nv48x000nfskgzxbvmgo3\"}"
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "PATCH",
+        "case":  "deliveries patch confirm with admin",
+        "status":  200,
+        "response":  "{\"ok\":true}"
+    },
+    {
+        "endpoint":  "/api/insights",
+        "method":  "POST",
+        "case":  "insights unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/insights",
+        "method":  "POST",
+        "case":  "insights invalid payload with admin",
+        "status":  400,
+        "response":  "{\"message\":\"Invalid insights payload\"}"
+    },
+    {
+        "endpoint":  "/api/insights",
+        "method":  "POST",
+        "case":  "insights valid payload with admin",
+        "status":  200,
+        "response":  "{\"insight\":\"1) 2 payments are pending. Prioritize these collections this week to improve cash flow. 2) Loss is high at â?¹100.00. Review delivery variance route-by-route and reduce returns first. 3) Net profit is â?¹300.00. Push early payments before the 10th "
+    },
+    {
+        "endpoint":  "/api/realtime/events",
+        "method":  "GET",
+        "case":  "realtime stream unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/realtime/events",
+        "method":  "GET",
+        "case":  "realtime stream authorized (first bytes)",
+        "status":  200,
+        "response":  "HTTP/1.1 200 OK\nvary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch\ncache-control: no-cache, no-transform\nconnection: keep-alive\ncontent-type: text/event-stream\nDate: Sun, 19 Apr 2026 11:06:47 GMT\nTransfer-Encoding: chunked\n\ne"
+    },
+    {
+        "endpoint":  "/api/auth/logout",
+        "method":  "POST",
+        "case":  "admin logout",
+        "status":  200,
+        "response":  "{\"ok\":true}"
+    },
+    {
+        "endpoint":  "/api/auth/me",
+        "method":  "GET",
+        "case":  "admin me after logout",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/auth/logout",
+        "method":  "POST",
+        "case":  "agent logout",
+        "status":  200,
+        "response":  "{\"ok\":true}"
+    }
+]

@@ -1,0 +1,163 @@
+[
+    {
+        "endpoint":  "/api/auth/me",
+        "method":  "GET",
+        "case":  "unauthenticated me",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "admin valid login",
+        "status":  401,
+        "response":  "{\"message\":\"Invalid credentials\"}"
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "agent valid login",
+        "status":  200,
+        "response":  "{\"user\":{\"id\":\"cmo5oy10j001gfskgsi002wut\",\"username\":\"agent1@example.com\",\"email\":\"agent1@example.com\",\"role\":\"AGENT\",\"approvalStatus\":\"APPROVED\"}}"
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "login invalid password",
+        "status":  401,
+        "response":  "{\"message\":\"Invalid credentials\"}"
+    },
+    {
+        "endpoint":  "/api/auth/register",
+        "method":  "POST",
+        "case":  "register invalid short password",
+        "status":  400,
+        "response":  "{\"message\":\"Password must be at least 10 characters and include at least one letter and one number.\",\"errors\":{\"password\":[\"Password must be at least 10 characters and include at least one letter and one number.\"]}}"
+    },
+    {
+        "endpoint":  "/api/auth/register",
+        "method":  "POST",
+        "case":  "register valid new user",
+        "status":  201,
+        "response":  "{\"message\":\"Registration successful. You can now log in.\",\"user\":{\"id\":\"cmo5pdkie0033fskg56taoeiy\",\"email\":\"apitest-valid-1776599339@example.com\",\"role\":\"USER\",\"approvalStatus\":\"APPROVED\"}}"
+    },
+    {
+        "endpoint":  "/api/auth/me",
+        "method":  "GET",
+        "case":  "agent me after login",
+        "status":  200,
+        "response":  "{\"user\":{\"userId\":\"cmo5oy10j001gfskgsi002wut\",\"username\":\"agent1@example.com\",\"role\":\"AGENT\",\"email\":\"agent1@example.com\",\"approvalStatus\":\"APPROVED\"}}"
+    },
+    {
+        "endpoint":  "/api/auth/delivery-boys",
+        "method":  "GET",
+        "case":  "delivery-boys unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/auth/delivery-boys",
+        "method":  "GET",
+        "case":  "delivery-boys with agent",
+        "status":  200,
+        "response":  "{\"deliveryBoys\":[{\"id\":\"cmo5pc4zv002rfskgb9odjsfh\",\"email\":\"verify-boy-1776599265@example.com\",\"username\":\"verify-boy-1776599265@example.com\",\"approvalStatus\":\"APPROVED\",\"createdAt\":\"2026-04-19T11:47:53.803Z\"},{\"id\":\"cmo5p9dve002dfskgjawesk7s\",\"email\":\"verify-"
+    },
+    {
+        "endpoint":  "/api/auth/delivery-boys",
+        "method":  "PATCH",
+        "case":  "delivery-boys patch invalid user id",
+        "status":  404,
+        "response":  "{\"message\":\"Delivery boy not found\"}"
+    },
+    {
+        "endpoint":  "/api/dashboard?month=bad-month",
+        "method":  "GET",
+        "case":  "dashboard invalid month format (admin)",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/dashboard?month=2026-04",
+        "method":  "GET",
+        "case":  "dashboard unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/customers",
+        "method":  "POST",
+        "case":  "customers create unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/customers",
+        "method":  "PATCH",
+        "case":  "customers patch with admin",
+        "status":  -1,
+        "response":  "Skipped: missing customer id"
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "POST",
+        "case":  "collections create unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "POST",
+        "case":  "collections create with admin",
+        "status":  -1,
+        "response":  "Skipped: missing customer id or admin login failed"
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "PATCH",
+        "case":  "collections patch mark paid with admin",
+        "status":  -1,
+        "response":  "Skipped: missing collection id"
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "POST",
+        "case":  "deliveries create unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "POST",
+        "case":  "deliveries create with admin",
+        "status":  -1,
+        "response":  "Skipped: missing customer id or admin login failed"
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "PATCH",
+        "case":  "deliveries patch confirm with admin",
+        "status":  -1,
+        "response":  "Skipped: missing delivery id"
+    },
+    {
+        "endpoint":  "/api/insights",
+        "method":  "POST",
+        "case":  "insights unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/realtime/events",
+        "method":  "GET",
+        "case":  "realtime stream unauthenticated",
+        "status":  401,
+        "response":  "{\"message\":\"Unauthorized\"}"
+    },
+    {
+        "endpoint":  "/api/auth/logout",
+        "method":  "POST",
+        "case":  "agent logout",
+        "status":  200,
+        "response":  "{\"ok\":true}"
+    }
+]

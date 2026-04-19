@@ -1,0 +1,135 @@
+[
+    {
+        "endpoint":  "/api/auth/me",
+        "method":  "GET",
+        "case":  "unauthenticated me",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "admin valid login",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "agent valid login",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "login invalid password",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/register",
+        "method":  "POST",
+        "case":  "register invalid short password",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/register",
+        "method":  "POST",
+        "case":  "register valid new user",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/delivery-boys",
+        "method":  "GET",
+        "case":  "delivery-boys unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/dashboard?month=bad-month",
+        "method":  "GET",
+        "case":  "dashboard invalid month format (admin)",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/dashboard?month=2026-04",
+        "method":  "GET",
+        "case":  "dashboard unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/customers",
+        "method":  "POST",
+        "case":  "customers create unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/customers",
+        "method":  "PATCH",
+        "case":  "customers patch with admin",
+        "status":  -1,
+        "response":  "Skipped: missing customer id"
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "POST",
+        "case":  "collections create unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "POST",
+        "case":  "collections create with admin",
+        "status":  -1,
+        "response":  "Skipped: missing customer id or admin login failed"
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "PATCH",
+        "case":  "collections patch mark paid with admin",
+        "status":  -1,
+        "response":  "Skipped: missing collection id"
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "POST",
+        "case":  "deliveries create unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "POST",
+        "case":  "deliveries create with admin",
+        "status":  -1,
+        "response":  "Skipped: missing customer id or admin login failed"
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "PATCH",
+        "case":  "deliveries patch confirm with admin",
+        "status":  -1,
+        "response":  "Skipped: missing delivery id"
+    },
+    {
+        "endpoint":  "/api/insights",
+        "method":  "POST",
+        "case":  "insights unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/realtime/events",
+        "method":  "GET",
+        "case":  "realtime stream unauthenticated",
+        "status":  404,
+        "response":  ""
+    }
+]

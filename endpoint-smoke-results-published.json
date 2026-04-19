@@ -1,0 +1,135 @@
+[
+    {
+        "endpoint":  "/api/auth/me",
+        "method":  "GET",
+        "case":  "unauthenticated me",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "admin valid login",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "agent valid login",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/login",
+        "method":  "POST",
+        "case":  "login invalid password",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/register",
+        "method":  "POST",
+        "case":  "register invalid short password",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/register",
+        "method":  "POST",
+        "case":  "register valid new user",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/auth/delivery-boys",
+        "method":  "GET",
+        "case":  "delivery-boys unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/dashboard?month=bad-month",
+        "method":  "GET",
+        "case":  "dashboard invalid month format (admin)",
+        "status":  200,
+        "response":  "\u003c!DOCTYPE html\u003e\u003chtml lang=\"en\"\u003e\u003chead\u003e\u003cmeta charSet=\"utf-8\"/\u003e\u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/\u003e\u003clink rel=\"stylesheet\" href=\"/_next/static/chunks/0x8a4e7ihd8cz.css\" data-precedence=\"next\"/\u003e\u003clink rel=\"preload\" as=\"script\" fetchP"
+    },
+    {
+        "endpoint":  "/api/dashboard?month=2026-04",
+        "method":  "GET",
+        "case":  "dashboard unauthenticated",
+        "status":  200,
+        "response":  "\u003c!DOCTYPE html\u003e\u003chtml lang=\"en\"\u003e\u003chead\u003e\u003cmeta charSet=\"utf-8\"/\u003e\u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/\u003e\u003clink rel=\"stylesheet\" href=\"/_next/static/chunks/0x8a4e7ihd8cz.css\" data-precedence=\"next\"/\u003e\u003clink rel=\"preload\" as=\"script\" fetchP"
+    },
+    {
+        "endpoint":  "/api/customers",
+        "method":  "POST",
+        "case":  "customers create unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/customers",
+        "method":  "PATCH",
+        "case":  "customers patch with admin",
+        "status":  -1,
+        "response":  "Skipped: missing customer id"
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "POST",
+        "case":  "collections create unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "POST",
+        "case":  "collections create with admin",
+        "status":  -1,
+        "response":  "Skipped: missing customer id or admin login failed"
+    },
+    {
+        "endpoint":  "/api/collections",
+        "method":  "PATCH",
+        "case":  "collections patch mark paid with admin",
+        "status":  -1,
+        "response":  "Skipped: missing collection id"
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "POST",
+        "case":  "deliveries create unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "POST",
+        "case":  "deliveries create with admin",
+        "status":  -1,
+        "response":  "Skipped: missing customer id or admin login failed"
+    },
+    {
+        "endpoint":  "/api/deliveries",
+        "method":  "PATCH",
+        "case":  "deliveries patch confirm with admin",
+        "status":  -1,
+        "response":  "Skipped: missing delivery id"
+    },
+    {
+        "endpoint":  "/api/insights",
+        "method":  "POST",
+        "case":  "insights unauthenticated",
+        "status":  404,
+        "response":  ""
+    },
+    {
+        "endpoint":  "/api/realtime/events",
+        "method":  "GET",
+        "case":  "realtime stream unauthenticated",
+        "status":  404,
+        "response":  ""
+    }
+]

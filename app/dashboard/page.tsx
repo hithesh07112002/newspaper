@@ -1,22 +1,24 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MonthlyMetrics } from "@/lib/calculations";
 import {
   addCustomerApi,
   addDeliveryApi,
   addDueApi,
+  buildApiUrl,
   confirmDeliveryApi,
   dashboardApi,
   generateInsightApi,
   getDeliveryBoyRegistrationsApi,
   getPendingCollections,
+  listAssignableUsersApi,
   logoutApi,
   markCollectionPaidApi,
-  meApi,
   recordCollectionApi,
   reviewDeliveryBoyApi,
+  updateCustomerAssignmentApi,
   updateCustomerStatusApi,
 } from "@/lib/client-api";
 import { Collection, LedgerData, PaymentMode, User } from "@/lib/types";
@@ -41,6 +43,7 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerArea, setCustomerArea] = useState("");
+  const [assignedUserId, setAssignedUserId] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("CASH");
@@ -63,38 +66,56 @@ export default function DashboardPage() {
       createdAt: string;
     }>
   >([]);
+  const [assignableUsers, setAssignableUsers] = useState<
+    Array<{
+      id: string;
+      username: string;
+      email: string | null;
+      assignedCustomerCount: number;
+    }>
+  >([]);
+  const [allocationByCustomerId, setAllocationByCustomerId] = useState<Record<string, string>>({});
+  const initialMonthRef = useRef(selectedMonth);
+  const lastLoadedMonthRef = useRef<string | null>(null);
 
   const loadDashboard = useCallback(
     async (month: string) => {
       const payload = await dashboardApi(month);
       setData(payload.data);
       setMetrics(payload.metrics);
+      lastLoadedMonthRef.current = month;
+      return payload;
     },
     [],
   );
+
+  const loadAssignableUsers = useCallback(async () => {
+    const payload = await listAssignableUsersApi();
+    setAssignableUsers(payload.users);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
 
     const bootstrap = async () => {
       try {
-        const me = await meApi();
+        const payload = await loadDashboard(initialMonthRef.current);
         if (!mounted) {
           return;
         }
-        setCurrentUser(me.user);
+        setCurrentUser(payload.viewer);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Request failed";
+        const unauthorized = /401|unauth|forbidden/i.test(message);
 
-        await loadDashboard(selectedMonth);
-
-        if (me.user.role === "AGENT") {
-          const registrations = await getDeliveryBoyRegistrationsApi();
-          if (!mounted) {
-            return;
-          }
-          setDeliveryRegistrations(registrations.deliveryBoys);
+        if (unauthorized) {
+          router.replace("/login");
+          return;
         }
-      } catch {
-        router.replace("/login");
+
+        if (mounted) {
+          setError(message);
+        }
       } finally {
         if (mounted) {
           setLoading(false);
@@ -107,16 +128,100 @@ export default function DashboardPage() {
     return () => {
       mounted = false;
     };
-  }, [loadDashboard, router, selectedMonth]);
+  }, [loadDashboard, router]);
 
   useEffect(() => {
     if (!currentUser) {
       return;
     }
 
-    const source = new EventSource("/api/realtime/events");
+    if (lastLoadedMonthRef.current === selectedMonth) {
+      return;
+    }
+
+    let mounted = true;
+    setLoading(true);
+
+    void loadDashboard(selectedMonth)
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Failed to refresh dashboard";
+        if (mounted) {
+          setError(message);
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentUser, loadDashboard, selectedMonth]);
+
+  useEffect(() => {
+    if (
+      !currentUser ||
+      !(currentUser.role === "AGENT" || currentUser.role === "ADMIN") ||
+      activeSidebarTab !== "customer-management"
+    ) {
+      return;
+    }
+
+    void loadAssignableUsers().catch((err) => {
+      const message = err instanceof Error ? err.message : "Failed to load users";
+      setError(message);
+    });
+  }, [activeSidebarTab, currentUser, loadAssignableUsers]);
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== "AGENT" || activeSidebarTab !== "delivery-operations") {
+      return;
+    }
+
+    let mounted = true;
+    void getDeliveryBoyRegistrationsApi()
+      .then((registrations) => {
+        if (!mounted) {
+          return;
+        }
+        setDeliveryRegistrations(registrations.deliveryBoys);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Failed to load delivery registrations";
+        if (mounted) {
+          setError(message);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeSidebarTab, currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    const source = new EventSource(buildApiUrl("/api/realtime/events"), {
+      withCredentials: true,
+    });
     const onLedger = () => {
-      void loadDashboard(selectedMonth);
+      void loadDashboard(selectedMonth)
+        .then(async () => {
+          if (
+            (currentUser.role === "AGENT" || currentUser.role === "ADMIN") &&
+            activeSidebarTab === "customer-management"
+          ) {
+            await loadAssignableUsers();
+          }
+        })
+        .catch((err) => {
+          const message = err instanceof Error ? err.message : "Failed to refresh dashboard";
+          setError(message);
+        });
     };
 
     source.addEventListener("ledger", onLedger);
@@ -125,7 +230,7 @@ export default function DashboardPage() {
       source.removeEventListener("ledger", onLedger);
       source.close();
     };
-  }, [currentUser, loadDashboard, selectedMonth]);
+  }, [activeSidebarTab, currentUser, loadAssignableUsers, loadDashboard, selectedMonth]);
 
   const monthCollections = useMemo(() => {
     if (!data) {
@@ -139,11 +244,11 @@ export default function DashboardPage() {
       return [];
     }
 
-    if (currentUser.role === "AGENT" || currentUser.role === "ADMIN") {
-      return data.deliveries;
+    if (currentUser.role === "DELIVERY_BOY") {
+      return data.deliveries.filter((item) => item.deliveryBoy === currentUser.username);
     }
 
-    return data.deliveries.filter((item) => item.deliveryBoy === currentUser.username);
+    return data.deliveries;
   }, [data, currentUser]);
 
   const pendingCollections = useMemo(() => {
@@ -163,17 +268,24 @@ export default function DashboardPage() {
   }, [data]);
 
   useEffect(() => {
+    if (!data) {
+      return;
+    }
+
+    setAllocationByCustomerId((prev) => {
+      const next: Record<string, string> = {};
+      for (const customer of data.customers) {
+        next[customer.id] = prev[customer.id] ?? customer.assignedUserId ?? "";
+      }
+      return next;
+    });
+  }, [data]);
+
+  useEffect(() => {
     if (!deliveryBoy && deliveryBoys.length > 0) {
       setDeliveryBoy(deliveryBoys[0].username);
     }
   }, [deliveryBoy, deliveryBoys]);
-
-  useEffect(() => {
-    if (!currentUser) {
-      return;
-    }
-    void loadDashboard(selectedMonth);
-  }, [currentUser, loadDashboard, selectedMonth]);
 
   const runAction = async (action: () => Promise<void>) => {
     setError("");
@@ -181,6 +293,10 @@ export default function DashboardPage() {
     try {
       await action();
       await loadDashboard(selectedMonth);
+
+      if (currentUser?.role === "AGENT" || currentUser?.role === "ADMIN") {
+        await loadAssignableUsers();
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Request failed";
       setError(message);
@@ -199,9 +315,14 @@ export default function DashboardPage() {
     }
 
     void runAction(async () => {
-      await addCustomerApi(customerName.trim(), customerArea.trim());
+      await addCustomerApi(
+        customerName.trim(),
+        customerArea.trim(),
+        assignedUserId ? assignedUserId : undefined,
+      );
       setCustomerName("");
       setCustomerArea("");
+      setAssignedUserId("");
     });
   };
 
@@ -209,6 +330,21 @@ export default function DashboardPage() {
     const nextStatus = currentStatus === "ACTIVE" ? "STOPPED" : "ACTIVE";
     void runAction(async () => {
       await updateCustomerStatusApi(customerId, nextStatus);
+    });
+  };
+
+  const updateAllocationDraft = (customerId: string, userId: string) => {
+    setAllocationByCustomerId((prev) => ({
+      ...prev,
+      [customerId]: userId,
+    }));
+  };
+
+  const saveCustomerAllocation = (customerId: string) => {
+    const nextUserId = allocationByCustomerId[customerId] ?? "";
+
+    void runAction(async () => {
+      await updateCustomerAssignmentApi(customerId, nextUserId ? nextUserId : null);
     });
   };
 
@@ -459,7 +595,7 @@ export default function DashboardPage() {
             {canManage && activeSidebarTab === "customer-management" ? (
               <div className="rounded-lg bg-white p-4 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-900">Customer Management</h2>
-              <form className="mt-3 grid gap-2 md:grid-cols-3" onSubmit={addCustomer}>
+              <form className="mt-3 grid gap-2 md:grid-cols-4" onSubmit={addCustomer}>
                 <input
                   placeholder="Customer name"
                   value={customerName}
@@ -472,30 +608,77 @@ export default function DashboardPage() {
                   onChange={(event) => setCustomerArea(event.target.value)}
                   className="rounded border border-slate-300 px-3 py-2"
                 />
+                <select
+                  value={assignedUserId}
+                  onChange={(event) => setAssignedUserId(event.target.value)}
+                  className="rounded border border-slate-300 px-3 py-2"
+                >
+                  <option value="">Unassigned</option>
+                  {assignableUsers.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.username}
+                    </option>
+                  ))}
+                </select>
                 <button className="rounded bg-blue-600 px-3 py-2 text-white">Add Customer</button>
               </form>
+
+              <div className="mt-3 rounded border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-medium text-slate-700">
+                  Database Users for Allocation ({assignableUsers.length})
+                </p>
+                {assignableUsers.length === 0 ? (
+                  <p className="mt-1 text-xs text-slate-500">
+                    No USER accounts found. Register USER accounts to allocate customers.
+                  </p>
+                ) : (
+                  <ul className="mt-2 grid gap-1 text-xs text-slate-600 md:grid-cols-2">
+                    {assignableUsers.map((user) => (
+                      <li key={user.id} className="rounded border border-slate-200 bg-white px-2 py-1">
+                        {user.username} (assigned {user.assignedCustomerCount})
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
               <ul className="mt-3 space-y-2 text-sm">
                 {data.customers.map((customer) => (
                   <li key={customer.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white p-2 text-slate-800">
-                    <span>
-                      {customer.name} - {customer.area} - {customer.status}
-                    </span>
-                    <button
-                      onClick={() => toggleCustomerStatus(customer.id, customer.status)}
-                      className="rounded bg-slate-700 px-2 py-1 text-xs text-white"
-                    >
-                      {customer.status === "ACTIVE" ? "Stop" : "Resume"}
-                    </button>
+                    <div className="flex-1">
+                      <span>
+                        {customer.name} - {customer.area} - {customer.status} - Assigned {customer.assignedUsername ?? "Unassigned"}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        value={allocationByCustomerId[customer.id] ?? customer.assignedUserId ?? ""}
+                        onChange={(event) => updateAllocationDraft(customer.id, event.target.value)}
+                        className="rounded border border-slate-300 px-2 py-1 text-xs"
+                      >
+                        <option value="">Unassigned</option>
+                        {assignableUsers.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.username}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => saveCustomerAllocation(customer.id)}
+                        className="rounded bg-indigo-600 px-2 py-1 text-xs text-white"
+                      >
+                        Save Allocation
+                      </button>
+                      <button
+                        onClick={() => toggleCustomerStatus(customer.id, customer.status)}
+                        className="rounded bg-slate-700 px-2 py-1 text-xs text-white"
+                      >
+                        {customer.status === "ACTIVE" ? "Stop" : "Resume"}
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
-              </div>
-            ) : null}
-
-            {canManage && activeSidebarTab === "collection-management" ? (
-              <div className="rounded-lg bg-white p-4 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Collection Tracking</h2>
-              <p className="mt-1 text-xs text-slate-600">Record direct payment</p>
               <form className="mt-3 grid gap-2 md:grid-cols-4" onSubmit={recordPayment}>
                 <select
                   value={selectedCustomer}
@@ -717,7 +900,7 @@ export default function DashboardPage() {
                           <span>
                             {customer?.name ?? "Unknown"} - Ordered {entry.ordered} - Delivered {entry.delivered} - Returned {entry.ordered - entry.delivered} - {entry.status}
                           </span>
-                          {entry.status === "PENDING" ? (
+                          {entry.status === "PENDING" && currentUser.role !== "USER" ? (
                             <div className="flex items-center gap-2">
                               <input
                                 type="number"

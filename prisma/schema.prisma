@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
@@ -49,8 +50,28 @@ model User {
   approvalStatus ApprovalStatus @default(APPROVED)
   deliveries   Delivery[]
   salaries     Salary[]
+  assignedCustomers Customer[] @relation("AssignedCustomers")
+  sessions     Session[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  @@index([role, createdAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
 }
 
 model Customer {
@@ -58,10 +79,14 @@ model Customer {
   name        String
   area        String
   status      CustomerStatus @default(ACTIVE)
+  assignedUserId String?
+  assignedUser User?       @relation("AssignedCustomers", fields: [assignedUserId], references: [id], onDelete: SetNull)
   deliveries  Delivery[]
   collections Collection[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
+  @@index([assignedUserId])
 }
 
 model Delivery {
@@ -77,6 +102,8 @@ model Delivery {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
+  @@index([date])
+  @@index([customerId, date])
   @@index([deliveryBoyId, date])
 }
 
@@ -93,6 +120,7 @@ model Collection {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
+  @@index([customerId, monthYear])
   @@index([monthYear, status])
 }
 

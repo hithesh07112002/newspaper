@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+const registerPasswordPolicyMessage =
+  "Password must be at least 10 characters and include at least one letter and one number.";
+
+const registerPasswordSchema = z
+  .string()
+  .min(10, registerPasswordPolicyMessage)
+  .max(120)
+  .regex(/[A-Za-z]/, registerPasswordPolicyMessage)
+  .regex(/[0-9]/, registerPasswordPolicyMessage);
+
 export const loginSchema = z.object({
   identifier: z.string().min(3).max(120),
   password: z.string().min(6).max(120),
@@ -7,8 +17,8 @@ export const loginSchema = z.object({
 
 export const registerSchema = z.object({
   email: z.string().email().max(120),
-  password: z.string().min(6).max(120),
-  role: z.enum(["USER", "DELIVERY_BOY"]),
+  password: registerPasswordSchema,
+  role: z.enum(["USER", "AGENT", "DELIVERY_BOY"]),
 });
 
 export const reviewDeliveryBoySchema = z.object({
@@ -16,15 +26,26 @@ export const reviewDeliveryBoySchema = z.object({
   action: z.enum(["APPROVE", "REJECT"]),
 });
 
+const assignedUserIdSchema = z.preprocess(
+  (value) => (value === "" ? null : value),
+  z.string().min(1).nullable().optional(),
+);
+
 export const createCustomerSchema = z.object({
   name: z.string().min(2).max(120),
   area: z.string().min(2).max(120),
+  assignedUserId: assignedUserIdSchema,
 });
 
-export const updateCustomerStatusSchema = z.object({
-  customerId: z.string().min(1),
-  status: z.enum(["ACTIVE", "STOPPED"]),
-});
+export const updateCustomerSchema = z
+  .object({
+    customerId: z.string().min(1),
+    status: z.enum(["ACTIVE", "STOPPED"]).optional(),
+    assignedUserId: assignedUserIdSchema,
+  })
+  .refine((value) => value.status !== undefined || value.assignedUserId !== undefined, {
+    message: "At least one field to update is required",
+  });
 
 export const createCollectionSchema = z.object({
   customerId: z.string().min(1),
@@ -32,7 +53,7 @@ export const createCollectionSchema = z.object({
   amount: z.number().positive(),
   mode: z.enum(["CASH", "ONLINE"]),
   status: z.enum(["PAID", "PENDING"]),
-  dueDate: z.string().optional(),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 export const markCollectionPaidSchema = z.object({
@@ -52,4 +73,12 @@ export const confirmDeliverySchema = z.object({
 
 export const monthSchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/),
+});
+
+export const insightInputSchema = z.object({
+  monthKey: z.string().regex(/^\d{4}-\d{2}$/),
+  totalCollection: z.number().finite().nonnegative(),
+  lossAmount: z.number().finite().nonnegative(),
+  netProfit: z.number().finite(),
+  pendingCount: z.number().int().nonnegative(),
 });

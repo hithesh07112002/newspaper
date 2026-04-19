@@ -4,6 +4,8 @@ import { currentMonthKey } from "@/lib/date";
 import { getDashboardPayload } from "@/lib/server-ledger";
 import { monthSchema } from "@/lib/validators";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const auth = await requireRole(request);
   if (!auth.ok) {
@@ -17,6 +19,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Invalid month format. Use YYYY-MM." }, { status: 400 });
   }
 
-  const payload = await getDashboardPayload(parsed.data.month);
-  return NextResponse.json(payload);
+  try {
+    const payload = await getDashboardPayload(parsed.data.month, auth.user);
+    return NextResponse.json({ ...payload, viewer: auth.user }, {
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch {
+    return NextResponse.json(
+      { message: "Dashboard service is temporarily unavailable. Please try again." },
+      { status: 503 },
+    );
+  }
 }
