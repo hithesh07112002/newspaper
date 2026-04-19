@@ -1,9 +1,9 @@
-import { CustomerStatus } from "@prisma/client";
+import { CustomerStatus, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { publishEvent } from "@/lib/realtime";
-import { createCustomerSchema, updateCustomerSchema } from "@/lib/validators";
+import { createCustomerSchema, deleteCustomerSchema, updateCustomerSchema } from "@/lib/validators";
 
 async function resolveAssignedUserId(assignedUserId: string | null | undefined) {
   if (assignedUserId === undefined) {
@@ -95,5 +95,33 @@ export async function PATCH(request: NextRequest) {
   });
 
   publishEvent({ type: "customer.updated", entityId: customer.id });
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(request: NextRequest) {
+  const auth = await requireRole(request, ["ADMIN"]);
+  if (!auth.ok) {
+    return NextResponse.json({ message: auth.message }, { status: auth.status });
+  }
+
+  const body = await request.json().catch(() => null);
+  const parsed = deleteCustomerSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ message: "Invalid delete payload" }, { status: 400 });
+  }
+
+  try {
+    await db.customer.delete({ where: { id: parsed.data.customerId } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return NextResponse.json({ message: "Customer not found" }, { status: 404 });
+    }
+    return NextResponse.json(
+      { message: "Unable to delete customer right now. Please try again." },
+      { status: 500 },
+    );
+  }
+
+  publishEvent({ type: "customer.deleted", entityId: parsed.data.customerId });
   return NextResponse.json({ ok: true });
 }

@@ -1,9 +1,9 @@
-import { DeliveryStatus } from "@prisma/client";
+import { DeliveryStatus, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { publishEvent } from "@/lib/realtime";
-import { confirmDeliverySchema, createDeliverySchema } from "@/lib/validators";
+import { confirmDeliverySchema, createDeliverySchema, deleteDeliverySchema } from "@/lib/validators";
 
 export async function POST(request: NextRequest) {
   const auth = await requireRole(request, ["AGENT", "ADMIN"]);
@@ -80,5 +80,33 @@ export async function PATCH(request: NextRequest) {
   });
 
   publishEvent({ type: "delivery.updated", entityId: updated.id });
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(request: NextRequest) {
+  const auth = await requireRole(request, ["ADMIN"]);
+  if (!auth.ok) {
+    return NextResponse.json({ message: auth.message }, { status: auth.status });
+  }
+
+  const body = await request.json().catch(() => null);
+  const parsed = deleteDeliverySchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ message: "Invalid delete payload" }, { status: 400 });
+  }
+
+  try {
+    await db.delivery.delete({ where: { id: parsed.data.deliveryId } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return NextResponse.json({ message: "Delivery not found" }, { status: 404 });
+    }
+    return NextResponse.json(
+      { message: "Unable to delete delivery right now. Please try again." },
+      { status: 500 },
+    );
+  }
+
+  publishEvent({ type: "delivery.deleted", entityId: parsed.data.deliveryId });
   return NextResponse.json({ ok: true });
 }

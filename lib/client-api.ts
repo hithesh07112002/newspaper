@@ -153,6 +153,50 @@ export async function listAssignableUsersApi() {
   }>("/api/users");
 }
 
+export async function listAdminUsersApi() {
+  return requestJson<{
+    users: Array<{
+      id: string;
+      username: string;
+      email: string | null;
+      role: "USER" | "AGENT" | "DELIVERY_BOY" | "ADMIN";
+      approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
+      createdAt: string;
+      assignedCustomerCount: number;
+      deliveryCount: number;
+      salaryCount: number;
+    }>;
+  }>("/api/users?scope=all");
+}
+
+export async function deleteUserApi(userId: string) {
+  return requestJson<{ ok: boolean }>("/api/users", {
+    method: "DELETE",
+    body: JSON.stringify({ userId }),
+  });
+}
+
+export async function deleteCustomerApi(customerId: string) {
+  return requestJson<{ ok: boolean }>("/api/customers", {
+    method: "DELETE",
+    body: JSON.stringify({ customerId }),
+  });
+}
+
+export async function deleteCollectionApi(collectionId: string) {
+  return requestJson<{ ok: boolean }>("/api/collections", {
+    method: "DELETE",
+    body: JSON.stringify({ collectionId }),
+  });
+}
+
+export async function deleteDeliveryApi(deliveryId: string) {
+  return requestJson<{ ok: boolean }>("/api/deliveries", {
+    method: "DELETE",
+    body: JSON.stringify({ deliveryId }),
+  });
+}
+
 export async function recordCollectionApi(input: {
   customerId: string;
   monthYear: string;

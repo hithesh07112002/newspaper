@@ -10,9 +10,14 @@ import {
   buildApiUrl,
   confirmDeliveryApi,
   dashboardApi,
+  deleteCollectionApi,
+  deleteCustomerApi,
+  deleteDeliveryApi,
+  deleteUserApi,
   generateInsightApi,
   getDeliveryBoyRegistrationsApi,
   getPendingCollections,
+  listAdminUsersApi,
   listAssignableUsersApi,
   logoutApi,
   markCollectionPaidApi,
@@ -29,6 +34,12 @@ function getMonthKey(date = new Date()) {
 
 function currency(value: number) {
   return `INR ${value.toFixed(2)}`;
+}
+
+function isManagementTab(
+  tab: "customer-management" | "collection-management" | "reports-insights" | "delivery-operations",
+) {
+  return tab === "customer-management" || tab === "collection-management";
 }
 
 export default function DashboardPage() {
@@ -74,9 +85,24 @@ export default function DashboardPage() {
       assignedCustomerCount: number;
     }>
   >([]);
+  const [adminUsers, setAdminUsers] = useState<
+    Array<{
+      id: string;
+      username: string;
+      email: string | null;
+      role: "USER" | "AGENT" | "DELIVERY_BOY" | "ADMIN";
+      approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
+      createdAt: string;
+      assignedCustomerCount: number;
+      deliveryCount: number;
+      salaryCount: number;
+    }>
+  >([]);
   const [allocationByCustomerId, setAllocationByCustomerId] = useState<Record<string, string>>({});
   const initialMonthRef = useRef(selectedMonth);
   const lastLoadedMonthRef = useRef<string | null>(null);
+  const selectedMonthRef = useRef(selectedMonth);
+  const activeSidebarTabRef = useRef(activeSidebarTab);
 
   const loadDashboard = useCallback(
     async (month: string) => {
@@ -92,6 +118,11 @@ export default function DashboardPage() {
   const loadAssignableUsers = useCallback(async () => {
     const payload = await listAssignableUsersApi();
     setAssignableUsers(payload.users);
+  }, []);
+
+  const loadAdminUsers = useCallback(async () => {
+    const payload = await listAdminUsersApi();
+    setAdminUsers(payload.users);
   }, []);
 
   useEffect(() => {
@@ -161,10 +192,18 @@ export default function DashboardPage() {
   }, [currentUser, loadDashboard, selectedMonth]);
 
   useEffect(() => {
+    selectedMonthRef.current = selectedMonth;
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    activeSidebarTabRef.current = activeSidebarTab;
+  }, [activeSidebarTab]);
+
+  useEffect(() => {
     if (
       !currentUser ||
       !(currentUser.role === "AGENT" || currentUser.role === "ADMIN") ||
-      activeSidebarTab !== "customer-management"
+      !isManagementTab(activeSidebarTab)
     ) {
       return;
     }
@@ -174,6 +213,17 @@ export default function DashboardPage() {
       setError(message);
     });
   }, [activeSidebarTab, currentUser, loadAssignableUsers]);
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== "ADMIN" || !isManagementTab(activeSidebarTab)) {
+      return;
+    }
+
+    void loadAdminUsers().catch((err) => {
+      const message = err instanceof Error ? err.message : "Failed to load admin users";
+      setError(message);
+    });
+  }, [activeSidebarTab, currentUser, loadAdminUsers]);
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== "AGENT" || activeSidebarTab !== "delivery-operations") {
@@ -208,14 +258,21 @@ export default function DashboardPage() {
     const source = new EventSource(buildApiUrl("/api/realtime/events"), {
       withCredentials: true,
     });
+
     const onLedger = () => {
-      void loadDashboard(selectedMonth)
+      const month = selectedMonthRef.current;
+      const currentTab = activeSidebarTabRef.current;
+
+      void loadDashboard(month)
         .then(async () => {
           if (
             (currentUser.role === "AGENT" || currentUser.role === "ADMIN") &&
-            activeSidebarTab === "customer-management"
+            isManagementTab(currentTab)
           ) {
             await loadAssignableUsers();
+            if (currentUser.role === "ADMIN") {
+              await loadAdminUsers();
+            }
           }
         })
         .catch((err) => {
@@ -230,7 +287,7 @@ export default function DashboardPage() {
       source.removeEventListener("ledger", onLedger);
       source.close();
     };
-  }, [activeSidebarTab, currentUser, loadAssignableUsers, loadDashboard, selectedMonth]);
+  }, [currentUser, loadAdminUsers, loadAssignableUsers, loadDashboard]);
 
   const monthCollections = useMemo(() => {
     if (!data) {
@@ -294,8 +351,13 @@ export default function DashboardPage() {
       await action();
       await loadDashboard(selectedMonth);
 
-      if (currentUser?.role === "AGENT" || currentUser?.role === "ADMIN") {
+      const shouldRefreshManagementUsers = isManagementTab(activeSidebarTab);
+
+      if (shouldRefreshManagementUsers && (currentUser?.role === "AGENT" || currentUser?.role === "ADMIN")) {
         await loadAssignableUsers();
+      }
+      if (shouldRefreshManagementUsers && currentUser?.role === "ADMIN") {
+        await loadAdminUsers();
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Request failed";
@@ -396,6 +458,46 @@ export default function DashboardPage() {
   const markCollectionPaid = (collectionId: string) => {
     void runAction(async () => {
       await markCollectionPaidApi(collectionId);
+    });
+  };
+
+  const removeCustomer = (customerId: string) => {
+    if (!window.confirm("Delete this customer and all linked collections/deliveries?")) {
+      return;
+    }
+
+    void runAction(async () => {
+      await deleteCustomerApi(customerId);
+    });
+  };
+
+  const removeCollection = (collectionId: string) => {
+    if (!window.confirm("Delete this collection entry?")) {
+      return;
+    }
+
+    void runAction(async () => {
+      await deleteCollectionApi(collectionId);
+    });
+  };
+
+  const removeDelivery = (deliveryId: string) => {
+    if (!window.confirm("Delete this delivery entry?")) {
+      return;
+    }
+
+    void runAction(async () => {
+      await deleteDeliveryApi(deliveryId);
+    });
+  };
+
+  const removeUser = (userId: string) => {
+    if (!window.confirm("Delete this user account?")) {
+      return;
+    }
+
+    void runAction(async () => {
+      await deleteUserApi(userId);
     });
   };
 
@@ -592,9 +694,11 @@ export default function DashboardPage() {
           </aside>
 
           <div className="space-y-4">
-            {canManage && activeSidebarTab === "customer-management" ? (
+            {canManage && (activeSidebarTab === "customer-management" || activeSidebarTab === "collection-management") ? (
               <div className="rounded-lg bg-white p-4 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Customer Management</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                {activeSidebarTab === "collection-management" ? "Collection Management" : "Customer Management"}
+              </h2>
               <form className="mt-3 grid gap-2 md:grid-cols-4" onSubmit={addCustomer}>
                 <input
                   placeholder="Customer name"
@@ -642,6 +746,32 @@ export default function DashboardPage() {
                 )}
               </div>
 
+              {currentUser.role === "ADMIN" ? (
+                <div className="mt-3 rounded border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs font-medium text-slate-700">User Administration</p>
+                  <ul className="mt-2 space-y-2 text-xs text-slate-700">
+                    {adminUsers.map((user) => (
+                      <li
+                        key={user.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white px-2 py-1"
+                      >
+                        <span>
+                          {user.username} ({user.role}) - assigned {user.assignedCustomerCount}, deliveries {user.deliveryCount}, salaries {user.salaryCount}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeUser(user.id)}
+                          disabled={user.id === currentUser.id}
+                          className="rounded bg-red-600 px-2 py-1 text-[11px] text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          Delete User
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
               <ul className="mt-3 space-y-2 text-sm">
                 {data.customers.map((customer) => (
                   <li key={customer.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white p-2 text-slate-800">
@@ -664,17 +794,28 @@ export default function DashboardPage() {
                         ))}
                       </select>
                       <button
+                        type="button"
                         onClick={() => saveCustomerAllocation(customer.id)}
                         className="rounded bg-indigo-600 px-2 py-1 text-xs text-white"
                       >
                         Save Allocation
                       </button>
                       <button
+                        type="button"
                         onClick={() => toggleCustomerStatus(customer.id, customer.status)}
                         className="rounded bg-slate-700 px-2 py-1 text-xs text-white"
                       >
                         {customer.status === "ACTIVE" ? "Stop" : "Resume"}
                       </button>
+                      {currentUser.role === "ADMIN" ? (
+                        <button
+                          type="button"
+                          onClick={() => removeCustomer(customer.id)}
+                          className="rounded bg-red-600 px-2 py-1 text-xs text-white"
+                        >
+                          Delete
+                        </button>
+                      ) : null}
                     </div>
                   </li>
                 ))}
@@ -753,11 +894,21 @@ export default function DashboardPage() {
                           {overdue ? " - OVERDUE" : ""}
                         </span>
                         <button
+                          type="button"
                           onClick={() => markCollectionPaid(entry.id)}
                           className="rounded bg-emerald-600 px-2 py-1 text-xs text-white"
                         >
                           Mark Paid
                         </button>
+                        {currentUser.role === "ADMIN" ? (
+                          <button
+                            type="button"
+                            onClick={() => removeCollection(entry.id)}
+                            className="rounded bg-red-600 px-2 py-1 text-xs text-white"
+                          >
+                            Delete
+                          </button>
+                        ) : null}
                       </li>
                     );
                   })}
@@ -768,8 +919,22 @@ export default function DashboardPage() {
                 {monthCollections.map((entry) => {
                   const customer = data.customers.find((item) => item.id === entry.customerId);
                   return (
-                    <li key={entry.id} className="rounded border border-slate-200 bg-white p-2 text-slate-800">
-                      {customer?.name ?? "Unknown"} - {currency(entry.amount)} - {entry.status} - {entry.paymentDate || "-"}
+                    <li
+                      key={entry.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white p-2 text-slate-800"
+                    >
+                      <span>
+                        {customer?.name ?? "Unknown"} - {currency(entry.amount)} - {entry.status} - {entry.paymentDate || "-"}
+                      </span>
+                      {currentUser.role === "ADMIN" ? (
+                        <button
+                          type="button"
+                          onClick={() => removeCollection(entry.id)}
+                          className="rounded bg-red-600 px-2 py-1 text-xs text-white"
+                        >
+                          Delete
+                        </button>
+                      ) : null}
                     </li>
                   );
                 })}
@@ -917,12 +1082,22 @@ export default function DashboardPage() {
                                 className="w-24 rounded border border-slate-300 px-2 py-1"
                               />
                               <button
+                                type="button"
                                 onClick={() => confirmDelivery(entry.id, entry.ordered)}
                                 className="rounded bg-blue-600 px-3 py-1.5 text-xs text-white"
                               >
                                 Confirm
                               </button>
                             </div>
+                          ) : null}
+                          {currentUser.role === "ADMIN" ? (
+                            <button
+                              type="button"
+                              onClick={() => removeDelivery(entry.id)}
+                              className="rounded bg-red-600 px-3 py-1.5 text-xs text-white"
+                            >
+                              Delete
+                            </button>
                           ) : null}
                         </li>
                       );

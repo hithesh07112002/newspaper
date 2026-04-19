@@ -1,11 +1,15 @@
 type RealtimeEventType =
   | "user.created"
+  | "user.deleted"
   | "customer.created"
   | "customer.updated"
+  | "customer.deleted"
   | "collection.created"
   | "collection.updated"
+  | "collection.deleted"
   | "delivery.created"
   | "delivery.updated"
+  | "delivery.deleted"
   | "salary.updated";
 
 export type RealtimeEvent = {

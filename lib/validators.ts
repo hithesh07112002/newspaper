@@ -75,6 +75,22 @@ export const monthSchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/),
 });
 
+export const deleteUserSchema = z.object({
+  userId: z.string().min(1),
+});
+
+export const deleteCustomerSchema = z.object({
+  customerId: z.string().min(1),
+});
+
+export const deleteCollectionSchema = z.object({
+  collectionId: z.string().min(1),
+});
+
+export const deleteDeliverySchema = z.object({
+  deliveryId: z.string().min(1),
+});
+
 export const insightInputSchema = z.object({
   monthKey: z.string().regex(/^\d{4}-\d{2}$/),
   totalCollection: z.number().finite().nonnegative(),
